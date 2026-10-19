@@ -9,14 +9,6 @@
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
 
 <style>
-/*
-  Layout: full-bleed Leaflet map as the canvas (no raster basemap —
-  county outlines double as the "land"); a floating control rail
-  top-left holds filters + legend, a slide-up/slide-in detail sheet
-  shows the clicked SEC, and a modal lists the SECs with no mappable
-  area. Mirrors the colour language of the printed county maps so the
-  two deliverables read as one system.
-*/
 :root{
   --navy:#1F3864;
   --navy-ink:#13213a;
@@ -81,8 +73,6 @@ body{
 
 /* ---- top bar ---- */
 #topbar{
-  /* starts clear of the control rail on desktop, full width on mobile
-     where the rail is hidden behind the menu button */
   position:fixed; top:0; left:296px; right:0; z-index:500;
   display:flex; align-items:center; gap:10px;
   padding:10px max(14px, env(safe-area-inset-left,0px)) 10px max(14px, env(safe-area-inset-left,0px));
@@ -353,7 +343,6 @@ select#countySel{
   "use strict";
 
   var STAGE_ORDER = ["Learn","Plan","Do","Dormant"];
-  var STAGE_COLOR = { Learn:"var(--learn)", Plan:"var(--plan)", Do:"var(--do)", Dormant:"var(--dormant)" };
   var STAGE_HEX   = { Learn:"#7ea6cc", Plan:"#ffc000", Do:"#2c8c3c", Dormant:"#a8a8a8" };
   var STAGE_HEX_INK = { Learn:"#355e82", Plan:"#8a6400", Do:"#1a5c27", Dormant:"#6e6e6e" };
   var STAGE_DESC = { Learn:"Early stage", Plan:"Developing EMP", Do:"Delivering",
@@ -378,8 +367,6 @@ select#countySel{
     return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
   }
 
-  // Shoelace-formula area, used only to decide draw order (so small SECs
-  // land on top of large ones) — doesn't need to be geographically precise.
   function ringArea(coords){
     var a = 0;
     for (var i=0;i<coords.length-1;i++){
@@ -396,12 +383,6 @@ select#countySel{
     return 0;
   }
 
-  // The mentors filled the L-P-D column inconsistently: only Clare's
-  // returns used "Dormant" there, while every other county recorded
-  // dormancy in the separate Active status column and left L-P-D as
-  // Learn/Plan/Do. So the colour is driven off Active status instead —
-  // anything not Active (Dormant, On Hold, Do Not Contact) shows as
-  // Dormant. The underlying status is still shown in the detail panel.
   var INACTIVE = new Set(['dormant','on hold','do not contact']);
   function normaliseStage(props){
     var a = String(props.active_status == null ? '' : props.active_status).trim().toLowerCase();
@@ -409,15 +390,11 @@ select#countySel{
     return props;
   }
 
-  // Rough centroid (vertex average of the outer ring) — good enough to
-  // place a click target, doesn't need to be the true geometric centroid.
   function roughCentroid(geom){
     var ring;
     if (geom.type === 'Polygon'){
       ring = geom.coordinates[0];
     } else {
-      // Scattered multi-part SECs (a dairy co-op's member areas, say):
-      // put the dot on the biggest piece, not an arbitrary first one.
       var best = null, bestA = -1;
       geom.coordinates.forEach(function(poly){
         var a = ringArea(poly[0]);
@@ -427,10 +404,9 @@ select#countySel{
     }
     var x=0, y=0, n=ring.length-1;
     for (var i=0;i<n;i++){ x+=ring[i][0]; y+=ring[i][1]; }
-    return [y/n, x/n]; // [lat, lng]
+    return [y/n, x/n];
   }
 
-  // ---------------- load data ----------------
   Promise.all([
     fetch('county_boundaries.geojson').then(r=>r.json()),
     fetch('sec_polygons.geojson').then(r=>r.json()),
@@ -439,7 +415,6 @@ select#countySel{
   ]).then(function(res){
     var countyGJ = res[0], secGJ = res[1], pinGJ = res[2], nmCSV = res[3];
 
-    // county / council outlines — the map's "land" context, no tiles
     countyLayer = L.geoJSON(countyGJ, {
       pane:'countyPane',
       style:{ color: cssVar('--land-line'), weight:1.3, fillColor: cssVar('--land'), fillOpacity:1 }
@@ -447,9 +422,6 @@ select#countySel{
 
     try{ map.fitBounds(countyLayer.getBounds(), { padding:[20,20] }); }catch(e){}
 
-    // Draw big, sprawling SECs first (bottom of the stack) and small ones
-    // last (on top) — otherwise a large SEC's shape sits over smaller SECs
-    // nested inside it and swallows every click meant for them.
     allSecFeatures = secGJ.features.slice().sort(function(a,b){
       return featureArea(b.geometry) - featureArea(a.geometry);
     });
@@ -474,18 +446,10 @@ select#countySel{
       onEachFeature: wireFeature
     }).addTo(map);
 
-    // A visible dot at every SEC's centre. This is what makes a small SEC
-    // findable and clickable when it sits inside a much larger one at the
-    // same stage — the fills alone can't distinguish them. Hovering a dot
-    // names the SEC, so you can tell them apart before clicking.
     hitLayer = L.geoJSON(null, {
       pane:'hitPane',
       pointToLayer: function(feature, latlng){
         var s = feature.properties.stage;
-        // pane MUST be set here: the layer-level `pane` option does not
-        // reach markers built in pointToLayer, so without this the dots
-        // land in the default overlayPane and render *underneath* the
-        // SEC polygons — invisible and unclickable.
         return L.circleMarker(latlng, {
           pane:'hitPane',
           radius:4.5,
@@ -521,7 +485,7 @@ select#countySel{
       }
     }).addTo(map);
 
-    buildLegend();      // must come first — applyFilters writes into its counters
+    buildLegend();
     applyFilters();
     buildNotMappable(nmCSV);
   }).catch(function(err){
@@ -529,11 +493,6 @@ select#countySel{
     console.error(err);
   });
 
-  // Big "umbrella" SECs (a whole-county development company, a dairy
-  // co-op) often contain smaller SECs that are at the SAME stage, so a
-  // solid fill hides them completely — green on green. Large SECs are
-  // therefore drawn as a light wash with a strong outline, so whatever
-  // sits inside them stays readable.
   function styleSec(feature){
     var s = feature.properties.stage;
     var a = feature.properties._area || 0;
@@ -559,7 +518,6 @@ select#countySel{
     }
   }
 
-  // ---------------- filtering ----------------
   function matches(props){
     if (state.county !== 'ALL' && props.county !== state.county) return false;
     if (!state.stages.has(props.stage)) return false;
@@ -585,7 +543,6 @@ select#countySel{
     updateLegendCounts(fSec, fPin);
   }
 
-  // ---------------- legend ----------------
   function buildLegend(){
     var wrap = document.getElementById('legendList');
     wrap.innerHTML = '';
@@ -613,7 +570,6 @@ select#countySel{
     });
   }
 
-  // ---------------- stage chips ----------------
   var chipWrap = document.getElementById('stageChips');
   STAGE_ORDER.forEach(function(s){
     var chip = document.createElement('div');
@@ -631,8 +587,6 @@ select#countySel{
   document.getElementById('countySel').addEventListener('change', function(e){
     state.county = e.target.value;
     applyFilters();
-    // Zoom to the selected county so nested small SECs render big enough
-    // to click comfortably; zoom back out to the full region for "All".
     if (state.county === 'ALL'){
       try{ map.fitBounds(countyLayer.getBounds(), { padding:[20,20] }); }catch(err){}
     } else {
@@ -654,7 +608,6 @@ select#countySel{
     }, 120);
   });
 
-  // ---------------- detail sheet ----------------
   function fmtAppId(v){
     if (v===null || v===undefined || v==='') return '—';
     var s = String(v);
@@ -691,7 +644,6 @@ select#countySel{
     document.getElementById('sheet').classList.remove('open');
   });
 
-  // ---------------- rail toggle (mobile) ----------------
   var rail = document.getElementById('rail');
   var isMobile = function(){ return window.innerWidth <= 780; };
   if (isMobile()) rail.classList.add('closed');
@@ -700,7 +652,6 @@ select#countySel{
     rail.classList.toggle('closed');
   });
 
-  // ---------------- not-mappable modal ----------------
   function parseCSV(text){
     var rows = []; var row = []; var field = ''; var inQ = false;
     for (var i=0;i<text.length;i++){
@@ -713,7 +664,7 @@ select#countySel{
         if (c === '"') inQ = true;
         else if (c === ','){ row.push(field); field=''; }
         else if (c === '\n'){ row.push(field); rows.push(row); row=[]; field=''; }
-        else if (c === '\r'){ /* skip */ }
+        else if (c === '\r'){ }
         else field += c;
       }
     }
