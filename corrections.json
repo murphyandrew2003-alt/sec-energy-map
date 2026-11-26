@@ -1,0 +1,102 @@
+{
+  "_README": [
+    "Stage corrections agreed at the mentor team meeting, 26 Nov 2026.",
+    "These are applied by index.html AFTER the stage is derived from active_status,",
+    "so they override both the recorded L-P-D column and the Active status rule.",
+    "Kept in a separate file deliberately: a future re-export of the GeoJSON from R",
+    "would otherwise wipe them. Once the master record is corrected at source, the",
+    "matching entry here can be deleted.",
+    "Match is on sec_name, exactly as it appears in sec_polygons.geojson."
+  ],
+  "_source": "Mentor team meeting, 26 Nov 2026 — notes by Andrew Murphy",
+  "corrections": [
+    {
+      "sec_name": "Comharchumann Dhún Chaoin Teoranta",
+      "county": "Kerry",
+      "set": {
+        "stage": "Do"
+      },
+      "was": "Plan",
+      "reason": "Confirmed at Do stage by mentor team"
+    },
+    {
+      "sec_name": "Shannon Hub",
+      "county": "Kerry",
+      "set": {
+        "stage": "Plan"
+      },
+      "was": "Learn",
+      "reason": "Progressed to Plan — EMP application in progress"
+    },
+    {
+      "sec_name": "Valentia Island Development Company",
+      "county": "Kerry",
+      "set": {
+        "stage": "Do"
+      },
+      "was": "Dormant (Active status = On Hold)",
+      "reason": "Completed an EMP some years ago; counts as Do rather than dormant"
+    },
+    {
+      "sec_name": "Lauragh Community Council Energy Group",
+      "county": "Kerry",
+      "set": {
+        "stage": "Do"
+      },
+      "was": "Dormant (Active status = On Hold)",
+      "reason": "Completed an EMP previously; counts as Do rather than dormant"
+    },
+    {
+      "sec_name": "Kilsheelan Tidy Towns",
+      "county": "Tipperary",
+      "set": {
+        "stage": "Do"
+      },
+      "was": "Plan",
+      "reason": "Moved from Plan to Do phase"
+    },
+    {
+      "sec_name": "Cashel Tidy Towns",
+      "county": "Tipperary",
+      "set": {
+        "stage": "Do"
+      },
+      "was": "Plan",
+      "reason": "Moved from Plan to Do phase"
+    },
+    {
+      "sec_name": "Tipperary PPN",
+      "county": "Tipperary",
+      "set": {
+        "stage": "Do"
+      },
+      "was": "Plan",
+      "reason": "Moved from Plan to Do phase"
+    },
+    {
+      "sec_name": "Emly Tidy Towns",
+      "county": "Tipperary",
+      "set": {
+        "stage": "Do"
+      },
+      "was": "Plan",
+      "reason": "Moved from Plan to Do phase"
+    }
+  ],
+  "_outstanding": [
+    "Net Zero Skibbereen — CONFIRMED WRONG: its geometry is byte-identical to BERE ISLAND ENERGY GROUP, i.e. Bere Island's Small Area codes were pasted into this row. Needs its real Skibbereen-area codes. (Skibbereen Sports Centre and Sustainable Skibbereen are both correctly placed at Skibbereen town.)",
+    "Fionn Trá SEC — mapped in north Kerry, belongs on the Dingle peninsula; Andrew sourcing correct SA codes",
+    "Sneem — two entries (Sneem SEC / Sneem TidyTowns); Andrew checking with Martin which goes to Plan",
+    "Transition Kerry — Andrew's note says remove, meeting notes say retain; unresolved",
+    "Cobh Zero Waste — on the not-mappable list, EMP Complete; needs SA codes",
+    "Cape Clear SCCN — newest active entry to be added; existing 'Cape Clear Energy Group / Fuinnimh Chléire' is the older duplicate; exact name to be confirmed",
+    "Leamlara — 'Leamlara Preservation Group' already mapped at Learn; confirm this is the one meant",
+    "Denny Street Heritage & Conservation Group — meeting notes say confirmed closed; not in Andrew's notes",
+    "10 further new SECs from Sean's Nov list — awaiting SA codes from mentors",
+    "Ballybunion Community Forum — query from Catríona Fallon on its relationship to Ballybunion-North Kerry Environmental Forum (App 1166)"
+  ],
+  "_resolved_26nov": [
+    "Ballybunion Community Forum ADDED — codes supplied were 2016-era; the three merged into one Small Area for Census 2022 (077104008/077104004/077104013)",
+    "Northside FRC Ballynanty and Killeedy CHA added as polygons"
+  ]
+}
